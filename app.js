@@ -182,7 +182,7 @@ function createMarker(place) {
     
     const icon = document.createElement('div');
     icon.className = 'marker-icon';
-    icon.textContent = place.type === 'birthday' ? '🎂' : '📍';
+    icon.textContent = '';
     el.appendChild(icon);
     
     return el;
