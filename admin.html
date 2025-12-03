@@ -408,12 +408,11 @@
                     <div class="place-header">
                         <div>
                             <div class="place-name">${place.name}</div>
-                            <span class="place-type ${place.type}">${place.type === 'birthday' ? '🎂 Birthday Message' : '📍 Place to Visit'}</span>
                         </div>
                     </div>
                     
                     <div class="place-info">
-                        📍 ${place.lat.toFixed(4)}, ${place.lng.toFixed(4)}
+                        ${place.lat.toFixed(4)}, ${place.lng.toFixed(4)}
                     </div>
                     
                     ${place.message ? `<div class="place-message">"${place.message}"</div>` : ''}

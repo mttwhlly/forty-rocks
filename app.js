@@ -7,7 +7,7 @@ const NYC_CENTER = [-73.9712, 40.7831];
 const DEFAULT_ZOOM = 12;
 
 // Supabase Configuration
-const SUPABASE_URL = 'https://jffzitptaxgpejjakuhk.supabase.co'; // e.g., https://abcdefgh.supabase.co
+const SUPABASE_URL = 'https://jffzitptaxgpejjakuhk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZnppdHB0YXhncGVqamFrdWhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3Nzc0NzUsImV4cCI6MjA4MDM1MzQ3NX0.J6w3sHUVFdrlocoJyqcaBEe_69o6gezRbXrKgfL7NDc';
 
 // Initialize Supabase client (using CDN)
@@ -34,38 +34,25 @@ async function loadPlaces() {
         places = data || [];
         console.log(`Loaded ${places.length} approved places`);
         
-        // Update UI if map is ready
         if (map && map.loaded()) {
             displayPlaces();
             renderPlacesList();
         }
     } catch (error) {
         console.error('Error loading places:', error);
-        // Fall back to localStorage if Supabase fails
-        loadPlacesFromLocalStorage();
-    }
-}
-
-// Fallback: Load from localStorage
-function loadPlacesFromLocalStorage() {
-    const saved = localStorage.getItem('nycBirthdayPlaces');
-    if (saved) {
-        places = JSON.parse(saved);
-        console.log('Loaded places from localStorage (fallback)');
     }
 }
 
 // Save place to Supabase (pending approval)
 async function savePlaceToSupabase(place) {
     try {
-        // Remove the id field as it's auto-generated
         const { id, ...placeData } = place;
         
         const { data, error } = await supabase
             .from('places')
             .insert([{
                 ...placeData,
-                approved: false // Pending approval
+                approved: false
             }])
             .select();
         
@@ -139,15 +126,18 @@ function initMap() {
 
 // Extract coordinates from Google Maps link or geocode address
 async function getCoordinates(input) {
+    // Try patterns in order of reliability
     const patterns = [
-        /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // !3dlat!4dlng (try this first - most reliable)
-        /@(-?\d+\.\d+),(-?\d+\.\d+)/,
-        /q=(-?\d+\.\d+),(-?\d+\.\d+)/
+        /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // !3dlat!4dlng - MOST RELIABLE
+        /3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,  // 3dlat!4dlng (without !)
+        /@(-?\d+\.\d+),(-?\d+\.\d+),\d+z/, // @lat,lng,17z (with zoom level)
+        /@(-?\d+\.\d+),(-?\d+\.\d+)/,     // @lat,lng (last resort)
     ];
     
     for (const pattern of patterns) {
         const match = input.match(pattern);
         if (match) {
+            console.log('Matched pattern:', pattern.source, 'Result:', match[1], match[2]);
             return {
                 lat: parseFloat(match[1]),
                 lng: parseFloat(match[2])
@@ -155,9 +145,16 @@ async function getCoordinates(input) {
         }
     }
     
+    // Extract place name or address from q= parameter for geocoding
+    let searchTerm = input;
+    const qMatch = input.match(/q=([^&]+)/);
+    if (qMatch) {
+        searchTerm = decodeURIComponent(qMatch[1].replace(/\+/g, ' '));
+    }
+    
     try {
         const response = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(input)}.json?access_token=${MAPBOX_TOKEN}&proximity=${NYC_CENTER[0]},${NYC_CENTER[1]}&limit=1`
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchTerm)}.json?access_token=${MAPBOX_TOKEN}&proximity=${NYC_CENTER[0]},${NYC_CENTER[1]}&limit=1`
         );
         const data = await response.json();
         
@@ -182,7 +179,7 @@ function createMarker(place) {
     
     const icon = document.createElement('div');
     icon.className = 'marker-icon';
-    icon.textContent = ''
+    icon.textContent = '';
     el.appendChild(icon);
     
     return el;
@@ -381,14 +378,12 @@ async function handleAddPlace(e) {
     const from = document.getElementById('placeFrom').value;
     const link = document.getElementById('placeLink').value;
     
-    // Show loading state
     const submitBtn = e.target.querySelector('.btn-primary');
     const originalText = submitBtn.textContent;
     submitBtn.textContent = 'Submitting...';
     submitBtn.disabled = true;
     
     try {
-        // Get coordinates
         const coords = await getCoordinates(link);
         
         if (!coords) {
@@ -398,7 +393,6 @@ async function handleAddPlace(e) {
             return;
         }
         
-        // Create new place - auto-detect type based on whether message exists
         const newPlace = {
             name,
             type: message ? 'birthday' : 'visit',
@@ -409,13 +403,11 @@ async function handleAddPlace(e) {
             link
         };
         
-        // Save to Supabase
         await savePlaceToSupabase(newPlace);
         
         closeModal();
         showSuccessMessage();
         
-        // Reset form
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
         
@@ -429,20 +421,16 @@ async function handleAddPlace(e) {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', () => {
-    // Load places from Supabase
     loadPlaces();
-    
-    // Initialize map
     initMap();
     
-    // Set up real-time updates (optional)
     supabase
         .channel('places-changes')
         .on('postgres_changes', 
             { event: '*', schema: 'public', table: 'places' },
             (payload) => {
                 console.log('Place updated:', payload);
-                loadPlaces(); // Reload when changes occur
+                loadPlaces();
             }
         )
         .subscribe();
@@ -459,6 +447,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Make functions globally available
 window.openDirections = openDirections;
 window.flyToPlace = flyToPlace;
