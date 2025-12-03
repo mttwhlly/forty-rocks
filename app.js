@@ -1,62 +1,82 @@
-// NYC Birthday Adventure Map
-// Built with Mapbox GL JS and Geolocation API
+// NYC Birthday Adventure Map - With Supabase Backend
+// Built with Mapbox GL JS, Geolocation API, and Supabase
 
 // Configuration
 const MAPBOX_TOKEN = 'pk.eyJ1IjoibXR0d2hsbHkiLCJhIjoiY2prZngzcGF1MGRhcTNwbzlhYTlza2NicyJ9.Cw82KbQTNdjYdobD3HTK-w';
-const NYC_CENTER = [-73.9712, 40.7831]; // NYC coordinates
+const NYC_CENTER = [-73.9712, 40.7831];
 const DEFAULT_ZOOM = 12;
+
+// Supabase Configuration
+const SUPABASE_URL = 'https://jffzitptaxgpejjakuhk.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZnppdHB0YXhncGVqamFrdWhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3Nzc0NzUsImV4cCI6MjA4MDM1MzQ3NX0.J6w3sHUVFdrlocoJyqcaBEe_69o6gezRbXrKgfL7NDc'; // Get from Supabase dashboard
+
+// Initialize Supabase client (using CDN)
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // State
 let map;
 let markers = [];
 let userLocationMarker = null;
 let watchId = null;
+let places = [];
 
-// Sample places data structure
-let places = [
-    {
-        id: 1,
-        name: 'The Metropolitan Museum of Art',
-        type: 'visit',
-        lat: 40.7794,
-        lng: -73.9632,
-        message: '',
-        from: '',
-        link: 'https://goo.gl/maps/xyz'
-    },
-    {
-        id: 2,
-        name: 'Central Park',
-        type: 'visit',
-        lat: 40.7829,
-        lng: -73.9654,
-        message: '',
-        from: '',
-        link: 'https://goo.gl/maps/abc'
-    },
-    {
-        id: 3,
-        name: 'Brooklyn Bridge',
-        type: 'birthday',
-        lat: 40.7061,
-        lng: -73.9969,
-        message: 'Happy 40th! May this year bring you as much joy as this beautiful bridge brings to NYC. Love you! 💕',
-        from: 'Mom & Dad',
-        link: 'https://goo.gl/maps/def'
-    }
-];
-
-// Load places from localStorage
-function loadPlaces() {
-    const saved = localStorage.getItem('nycBirthdayPlaces');
-    if (saved) {
-        places = JSON.parse(saved);
+// Load places from Supabase
+async function loadPlaces() {
+    try {
+        const { data, error } = await supabase
+            .from('places')
+            .select('*')
+            .eq('approved', true)
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        places = data || [];
+        console.log(`Loaded ${places.length} approved places`);
+        
+        // Update UI if map is ready
+        if (map && map.loaded()) {
+            displayPlaces();
+            renderPlacesList();
+        }
+    } catch (error) {
+        console.error('Error loading places:', error);
+        // Fall back to localStorage if Supabase fails
+        loadPlacesFromLocalStorage();
     }
 }
 
-// Save places to localStorage
-function savePlaces() {
-    localStorage.setItem('nycBirthdayPlaces', JSON.stringify(places));
+// Fallback: Load from localStorage
+function loadPlacesFromLocalStorage() {
+    const saved = localStorage.getItem('nycBirthdayPlaces');
+    if (saved) {
+        places = JSON.parse(saved);
+        console.log('Loaded places from localStorage (fallback)');
+    }
+}
+
+// Save place to Supabase (pending approval)
+async function savePlaceToSupabase(place) {
+    try {
+        // Remove the id field as it's auto-generated
+        const { id, ...placeData } = place;
+        
+        const { data, error } = await supabase
+            .from('places')
+            .insert([{
+                ...placeData,
+                approved: false // Pending approval
+            }])
+            .select();
+        
+        if (error) throw error;
+        
+        console.log('Place submitted for approval:', data);
+        return data[0];
+    } catch (error) {
+        console.error('Error saving place:', error);
+        throw error;
+    }
 }
 
 // Initialize map
@@ -73,10 +93,8 @@ function initMap() {
         antialias: true
     });
     
-    // Add navigation controls
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
     
-    // Add 3D buildings for that WebGL wow factor
     map.on('load', () => {
         const layers = map.getStyle().layers;
         const labelLayerId = layers.find(
@@ -114,7 +132,6 @@ function initMap() {
             }
         }, labelLayerId);
         
-        // Load and display all places
         displayPlaces();
         renderPlacesList();
     });
@@ -122,11 +139,10 @@ function initMap() {
 
 // Extract coordinates from Google Maps link or geocode address
 async function getCoordinates(input) {
-    // Try to extract from Google Maps link
     const patterns = [
-        /@(-?\d+\.\d+),(-?\d+\.\d+)/,  // @lat,lng
-        /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // !3dlat!4dlng
-        /q=(-?\d+\.\d+),(-?\d+\.\d+)/ // q=lat,lng
+        /@(-?\d+\.\d+),(-?\d+\.\d+)/,
+        /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,
+        /q=(-?\d+\.\d+),(-?\d+\.\d+)/
     ];
     
     for (const pattern of patterns) {
@@ -139,7 +155,6 @@ async function getCoordinates(input) {
         }
     }
     
-    // If not a link, try geocoding the address
     try {
         const response = await fetch(
             `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(input)}.json?access_token=${MAPBOX_TOKEN}&proximity=${NYC_CENTER[0]},${NYC_CENTER[1]}&limit=1`
@@ -167,7 +182,7 @@ function createMarker(place) {
     
     const icon = document.createElement('div');
     icon.className = 'marker-icon';
-    icon.textContent = place.type === 'birthday' ? '◯' : '◯';
+    icon.textContent = place.type === 'birthday' ? '🎂' : '📍';
     el.appendChild(icon);
     
     return el;
@@ -186,7 +201,7 @@ function createPopupContent(place) {
     }
     
     html += `<button class="directions-btn" onclick="openDirections('${place.link}')">
-        Get Directions
+        Get Directions 🗺️
     </button>`;
     
     return html;
@@ -194,11 +209,9 @@ function createPopupContent(place) {
 
 // Display all places on map
 function displayPlaces() {
-    // Clear existing markers
     markers.forEach(marker => marker.remove());
     markers = [];
     
-    // Add markers for each place
     places.forEach(place => {
         const el = createMarker(place);
         
@@ -224,9 +237,7 @@ function renderPlacesList() {
         card.className = 'place-card';
         card.onclick = () => flyToPlace(place);
         
-        let html = `
-            <div class="place-name">${place.name}</div>
-        `;
+        let html = `<div class="place-name">${place.name}</div>`;
         
         if (place.message) {
             html += `<div class="place-message">"${place.message}"</div>`;
@@ -252,7 +263,6 @@ function flyToPlace(place) {
         essential: true
     });
     
-    // Highlight the marker
     const marker = markers.find(m => 
         m.getLngLat().lng === place.lng && 
         m.getLngLat().lat === place.lat
@@ -282,7 +292,6 @@ function requestLocation() {
         position => {
             updateUserLocation(position.coords);
             
-            // Watch for position changes
             if (watchId === null) {
                 watchId = navigator.geolocation.watchPosition(
                     pos => updateUserLocation(pos.coords),
@@ -303,12 +312,10 @@ function requestLocation() {
 function updateUserLocation(coords) {
     const { latitude, longitude } = coords;
     
-    // Remove old marker
     if (userLocationMarker) {
         userLocationMarker.remove();
     }
     
-    // Create user location marker
     const el = document.createElement('div');
     el.style.width = '20px';
     el.style.height = '20px';
@@ -321,7 +328,6 @@ function updateUserLocation(coords) {
         .setLngLat([longitude, latitude])
         .addTo(map);
     
-    // Fly to user location
     map.flyTo({
         center: [longitude, latitude],
         zoom: 15,
@@ -340,6 +346,32 @@ function closeModal() {
     document.getElementById('addPlaceForm').reset();
 }
 
+// Show success message
+function showSuccessMessage() {
+    const message = document.createElement('div');
+    message.style.cssText = `
+        position: fixed;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #10B981;
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        z-index: 1000;
+        font-weight: 600;
+        animation: slideDown 0.3s ease-out;
+    `;
+    message.textContent = '✓ Place submitted! Waiting for approval...';
+    document.body.appendChild(message);
+    
+    setTimeout(() => {
+        message.style.animation = 'fadeOut 0.3s ease-out';
+        setTimeout(() => message.remove(), 300);
+    }, 3000);
+}
+
 // Form handling
 async function handleAddPlace(e) {
     e.preventDefault();
@@ -350,54 +382,83 @@ async function handleAddPlace(e) {
     const from = document.getElementById('placeFrom').value;
     const link = document.getElementById('placeLink').value;
     
-    // Get coordinates
-    const coords = await getCoordinates(link);
+    // Show loading state
+    const submitBtn = e.target.querySelector('.btn-primary');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Submitting...';
+    submitBtn.disabled = true;
     
-    if (!coords) {
-        alert('Could not find coordinates for this location. Please check the link or address.');
-        return;
+    try {
+        // Get coordinates
+        const coords = await getCoordinates(link);
+        
+        if (!coords) {
+            alert('Could not find coordinates for this location. Please check the link or address.');
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+            return;
+        }
+        
+        // Create new place
+        const newPlace = {
+            name,
+            type,
+            lat: coords.lat,
+            lng: coords.lng,
+            message,
+            from,
+            link
+        };
+        
+        // Save to Supabase
+        await savePlaceToSupabase(newPlace);
+        
+        closeModal();
+        showSuccessMessage();
+        
+        // Reset form
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        
+    } catch (error) {
+        console.error('Error adding place:', error);
+        alert('Failed to submit place. Please try again.');
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
     }
-    
-    // Create new place
-    const newPlace = {
-        id: Date.now(),
-        name,
-        type,
-        lat: coords.lat,
-        lng: coords.lng,
-        message,
-        from,
-        link
-    };
-    
-    places.push(newPlace);
-    savePlaces();
-    displayPlaces();
-    renderPlacesList();
-    closeModal();
-    
-    // Fly to new place
-    flyToPlace(newPlace);
 }
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', () => {
+    // Load places from Supabase
     loadPlaces();
+    
+    // Initialize map
     initMap();
+    
+    // Set up real-time updates (optional)
+    supabase
+        .channel('places-changes')
+        .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'places' },
+            (payload) => {
+                console.log('Place updated:', payload);
+                loadPlaces(); // Reload when changes occur
+            }
+        )
+        .subscribe();
     
     document.getElementById('locationBtn').addEventListener('click', requestLocation);
     document.getElementById('addBtn').addEventListener('click', openModal);
     document.getElementById('cancelBtn').addEventListener('click', closeModal);
     document.getElementById('addPlaceForm').addEventListener('submit', handleAddPlace);
     
-    // Close modal on background click
     document.getElementById('addModal').addEventListener('click', (e) => {
         if (e.target.id === 'addModal') {
             closeModal();
         }
     });
     
-    // Show/hide message fields based on type
     document.getElementById('placeType').addEventListener('change', (e) => {
         const messageGroup = document.getElementById('messageGroup');
         const fromGroup = document.getElementById('fromGroup');
