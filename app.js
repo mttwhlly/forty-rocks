@@ -80,7 +80,7 @@ function initMap() {
         antialias: true
     });
     
-    map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+    map.addControl(new mapboxgl.NavigationControl(), 'bottom-left');
     
     map.on('load', () => {
         const layers = map.getStyle().layers;
@@ -198,7 +198,7 @@ function createPopupContent(place) {
     }
     
     // Add directions link with icon
-    html += `<a href="${place.link}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-weight: 600; text-decoration: none; margin-top: 12px; font-size: 14px;">
+    html += `<a href="${place.link}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-weight: 600; text-decoration: none; margin-top: 6px; font-size: 12px; background: var(--shadow); padding: 2px 10px; border-radius: 4px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
         </svg>
