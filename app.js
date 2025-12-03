@@ -7,8 +7,8 @@ const NYC_CENTER = [-73.9712, 40.7831];
 const DEFAULT_ZOOM = 12;
 
 // Supabase Configuration
-const SUPABASE_URL = 'https://jffzitptaxgpejjakuhk.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZnppdHB0YXhncGVqamFrdWhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3Nzc0NzUsImV4cCI6MjA4MDM1MzQ3NX0.J6w3sHUVFdrlocoJyqcaBEe_69o6gezRbXrKgfL7NDc'; // Get from Supabase dashboard
+const SUPABASE_URL = 'https://jffzitptaxgpejjakuhk.supabase.co'; // e.g., https://abcdefgh.supabase.co
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZnppdHB0YXhncGVqamFrdWhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3Nzc0NzUsImV4cCI6MjA4MDM1MzQ3NX0.J6w3sHUVFdrlocoJyqcaBEe_69o6gezRbXrKgfL7NDc';
 
 // Initialize Supabase client (using CDN)
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -140,8 +140,8 @@ function initMap() {
 // Extract coordinates from Google Maps link or geocode address
 async function getCoordinates(input) {
     const patterns = [
+        /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // !3dlat!4dlng (try this first - most reliable)
         /@(-?\d+\.\d+),(-?\d+\.\d+)/,
-        /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,
         /q=(-?\d+\.\d+),(-?\d+\.\d+)/
     ];
     
@@ -182,7 +182,7 @@ function createMarker(place) {
     
     const icon = document.createElement('div');
     icon.className = 'marker-icon';
-    icon.textContent = '';
+    icon.textContent = ''
     el.appendChild(icon);
     
     return el;
@@ -201,7 +201,7 @@ function createPopupContent(place) {
     }
     
     html += `<button class="directions-btn" onclick="openDirections('${place.link}')">
-        Get Directions
+        Get Directions 🗺️
     </button>`;
     
     return html;
@@ -377,7 +377,6 @@ async function handleAddPlace(e) {
     e.preventDefault();
     
     const name = document.getElementById('placeName').value;
-    const type = document.getElementById('placeType').value;
     const message = document.getElementById('placeMessage').value;
     const from = document.getElementById('placeFrom').value;
     const link = document.getElementById('placeLink').value;
@@ -399,10 +398,10 @@ async function handleAddPlace(e) {
             return;
         }
         
-        // Create new place
+        // Create new place - auto-detect type based on whether message exists
         const newPlace = {
             name,
-            type,
+            type: message ? 'birthday' : 'visit',
             lat: coords.lat,
             lng: coords.lng,
             message,
@@ -457,15 +456,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.id === 'addModal') {
             closeModal();
         }
-    });
-    
-    document.getElementById('placeType').addEventListener('change', (e) => {
-        const messageGroup = document.getElementById('messageGroup');
-        const fromGroup = document.getElementById('fromGroup');
-        const isBirthday = e.target.value === 'birthday';
-        
-        messageGroup.style.display = isBirthday ? 'block' : 'none';
-        fromGroup.style.display = isBirthday ? 'block' : 'none';
     });
 });
 
