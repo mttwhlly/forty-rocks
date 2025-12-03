@@ -1,0 +1,32 @@
+{
+  "name": "NYC Birthday Adventure - Happy 40th!",
+  "short_name": "NYC Birthday",
+  "description": "Celebrate a special 40th birthday in New York City with an interactive map of places to visit and birthday messages from loved ones",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF8F0",
+  "theme_color": "#FF6B9D",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["travel", "lifestyle"],
+  "screenshots": [
+    {
+      "src": "screenshot.png",
+      "sizes": "540x720",
+      "type": "image/png"
+    }
+  ]
+}
