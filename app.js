@@ -126,6 +126,26 @@ function initMap() {
 
 // Extract coordinates from Google Maps link or geocode address
 async function getCoordinates(input) {
+    // If it's a short Google Maps link, expand it using a CORS proxy
+    if (input.includes('goo.gl') || input.includes('maps.app.goo.gl')) {
+        try {
+            // Use allOrigins CORS proxy to expand the URL
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(input)}`;
+            const response = await fetch(proxyUrl);
+            const html = await response.text();
+            
+            // Extract the full URL from the HTML redirect
+            const urlMatch = html.match(/URL='([^']+)'/) || html.match(/url=([^"]+)"/);
+            if (urlMatch) {
+                input = urlMatch[1];
+                console.log('Expanded URL:', input);
+            }
+        } catch (error) {
+            console.error('Error expanding short link:', error);
+            // Continue anyway, might work with geocoding
+        }
+    }
+    
     // Try patterns in order of reliability
     const patterns = [
         /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // !3dlat!4dlng - MOST RELIABLE
@@ -198,7 +218,7 @@ function createPopupContent(place) {
     }
     
     html += `<button class="directions-btn" onclick="openDirections('${place.link}')">
-        Get Directions 🗺️
+        Get Directions
     </button>`;
     
     return html;
