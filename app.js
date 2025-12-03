@@ -354,7 +354,7 @@ function showSuccessMessage() {
         top: 80px;
         left: 50%;
         transform: translateX(-50%);
-        background: #10B981;
+        background: #000000;
         color: white;
         padding: 16px 24px;
         border-radius: 12px;
