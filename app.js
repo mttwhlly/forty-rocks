@@ -201,7 +201,7 @@ function createPopupContent(place) {
     }
     
     html += `<button class="directions-btn" onclick="openDirections('${place.link}')">
-        Get Directions 🗺️
+        Get Directions
     </button>`;
     
     return html;
