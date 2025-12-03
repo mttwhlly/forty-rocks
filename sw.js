@@ -1,5 +1,5 @@
 // Service Worker for NYC Birthday Adventure PWA
-const CACHE_NAME = 'nyc-birthday-v2';
+const CACHE_NAME = 'nyc-birthday-v3';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
