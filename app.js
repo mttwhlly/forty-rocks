@@ -126,32 +126,12 @@ function initMap() {
 
 // Extract coordinates from Google Maps link or geocode address
 async function getCoordinates(input) {
-    // If it's a short Google Maps link, expand it using a CORS proxy
-    if (input.includes('goo.gl') || input.includes('maps.app.goo.gl')) {
-        try {
-            // Use allOrigins CORS proxy to expand the URL
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(input)}`;
-            const response = await fetch(proxyUrl);
-            const html = await response.text();
-            
-            // Extract the full URL from the HTML redirect
-            const urlMatch = html.match(/URL='([^']+)'/) || html.match(/url=([^"]+)"/);
-            if (urlMatch) {
-                input = urlMatch[1];
-                console.log('Expanded URL:', input);
-            }
-        } catch (error) {
-            console.error('Error expanding short link:', error);
-            // Continue anyway, might work with geocoding
-        }
-    }
-    
-    // Try patterns in order of reliability
+    // Try simple pattern matching (no CORS proxy)
     const patterns = [
-        /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // !3dlat!4dlng - MOST RELIABLE
+        /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // !3dlat!4dlng
         /3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,  // 3dlat!4dlng (without !)
-        /@(-?\d+\.\d+),(-?\d+\.\d+),\d+z/, // @lat,lng,17z (with zoom level)
-        /@(-?\d+\.\d+),(-?\d+\.\d+)/,     // @lat,lng (last resort)
+        /@(-?\d+\.\d+),(-?\d+\.\d+),\d+z/, // @lat,lng,17z
+        /@(-?\d+\.\d+),(-?\d+\.\d+)/,     // @lat,lng
     ];
     
     for (const pattern of patterns) {
@@ -165,7 +145,7 @@ async function getCoordinates(input) {
         }
     }
     
-    // Extract place name or address from q= parameter for geocoding
+    // Try geocoding as fallback
     let searchTerm = input;
     const qMatch = input.match(/q=([^&]+)/);
     if (qMatch) {
@@ -210,16 +190,20 @@ function createPopupContent(place) {
     let html = `<div class="popup-title">${place.name}</div>`;
     
     if (place.message) {
-        html += `<div class="popup-message">${place.message}</div>`;
+        html += `<div class="popup-message">"${place.message}"</div>`;
     }
     
     if (place.from) {
-        html += `<div class="popup-from">- ${place.from}</div>`;
+        html += `<div class="popup-from">— ${place.from}</div>`;
     }
     
-    html += `<button class="directions-btn" onclick="openDirections('${place.link}')">
-        Get Directions
-    </button>`;
+    // Add directions link with icon
+    html += `<a href="${place.link}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-weight: 600; text-decoration: none; margin-top: 12px; font-size: 14px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+        </svg>
+        Directions
+    </a>`;
     
     return html;
 }
@@ -247,7 +231,15 @@ function displayPlaces() {
 // Render places list
 function renderPlacesList() {
     const listContainer = document.getElementById('placesList');
+    const countElement = document.getElementById('placesCount');
+    
     listContainer.innerHTML = '';
+    countElement.textContent = `${places.length} ${places.length === 1 ? 'place' : 'places'}`;
+    
+    if (places.length === 0) {
+        listContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 40px 20px;">No places yet. Be the first to add one!</div>';
+        return;
+    }
     
     places.forEach(place => {
         const card = document.createElement('div');
@@ -261,10 +253,8 @@ function renderPlacesList() {
         }
         
         if (place.from) {
-            html += `<div class="place-from">From ${place.from}</div>`;
+            html += `<div class="place-from">— ${place.from}</div>`;
         }
-        
-        html += `<button class="directions-btn" onclick="openDirections('${place.link}'); event.stopPropagation();">Get Directions</button>`;
         
         card.innerHTML = html;
         listContainer.appendChild(card);
@@ -273,21 +263,32 @@ function renderPlacesList() {
 
 // Fly to place on map
 function flyToPlace(place) {
+    // Collapse drawer on mobile after selection
+    const drawer = document.getElementById('placesDrawer');
+    if (window.innerWidth <= 768) {
+        drawer.classList.add('collapsed');
+    }
+    
+    // Use padding to offset the center point
     map.flyTo({
         center: [place.lng, place.lat],
         zoom: 16,
+        padding: { top: 200, bottom: 100, left: 50, right: 50 },
         duration: 2000,
         essential: true
     });
     
-    const marker = markers.find(m => 
-        m.getLngLat().lng === place.lng && 
-        m.getLngLat().lat === place.lat
-    );
-    
-    if (marker) {
-        marker.togglePopup();
-    }
+    // Open popup after animation completes
+    setTimeout(() => {
+        const marker = markers.find(m => 
+            m.getLngLat().lng === place.lng && 
+            m.getLngLat().lat === place.lat
+        );
+        
+        if (marker) {
+            marker.togglePopup();
+        }
+    }, 2100);
 }
 
 // Open directions
@@ -404,13 +405,13 @@ async function handleAddPlace(e) {
     submitBtn.disabled = true;
     
     try {
-        const coords = await getCoordinates(link);
+        // Try to get coordinates, but allow submission without them
+        let coords = await getCoordinates(link);
         
+        // If coordinates fail, use NYC center as placeholder
         if (!coords) {
-            alert('Could not find coordinates for this location. Please check the link or address.');
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
-            return;
+            console.log('Could not find coordinates, using placeholder');
+            coords = { lat: NYC_CENTER[1], lng: NYC_CENTER[0] };
         }
         
         const newPlace = {
@@ -443,6 +444,19 @@ async function handleAddPlace(e) {
 document.addEventListener('DOMContentLoaded', () => {
     loadPlaces();
     initMap();
+    
+    // Drawer toggle
+    const drawer = document.getElementById('placesDrawer');
+    const drawerHandle = document.getElementById('drawerHandle');
+    
+    drawerHandle.addEventListener('click', () => {
+        drawer.classList.toggle('collapsed');
+    });
+    
+    // Start collapsed on mobile
+    if (window.innerWidth <= 768) {
+        drawer.classList.add('collapsed');
+    }
     
     supabase
         .channel('places-changes')

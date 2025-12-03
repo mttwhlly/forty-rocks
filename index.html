@@ -197,99 +197,119 @@
             transform: translateY(0);
         }
         
-        /* Places List */
-        .places-list {
+        /* Places Drawer (Bottom Sheet) */
+        .places-drawer {
             position: fixed;
-            bottom: 32px;
-            left: 20px;
+            bottom: 0;
+            left: 0;
+            right: 0;
             z-index: 50;
-            max-width: 320px;
-            max-height: 60vh;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .places-drawer.collapsed {
+            transform: translateY(calc(100% - 80px));
+        }
+        
+        .drawer-handle {
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .drawer-handle-bar {
+            width: 40px;
+            height: 4px;
+            background: #D0D0D0;
+            border-radius: 2px;
+        }
+        
+        .drawer-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .drawer-title {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--text);
+        }
+        
+        .drawer-count {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+        
+        .places-list {
+            flex: 1;
             overflow-y: auto;
-            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+            padding: 12px 20px;
         }
         
         .places-list::-webkit-scrollbar {
-            width: 2px;
+            width: 4px;
         }
         
         .places-list::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.05);
         }
         
         .places-list::-webkit-scrollbar-thumb {
             background: var(--primary);
-            border-radius: 3px;
+            border-radius: 2px;
         }
         
         .place-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
+            background: #F9F9F9;
+            border-radius: 12px;
             padding: 16px;
             margin-bottom: 12px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.2s;
             border: 2px solid transparent;
         }
         
         .place-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            background: #F0F0F0;
             border-color: var(--primary);
         }
         
         .place-card.active {
             border-color: var(--primary);
-            background: white;
+            background: #E8E8E8;
         }
         
         .place-name {
             font-weight: 700;
             font-size: 16px;
-            margin-bottom: 4px;
-            color: var(--text);
-        }
-        
-        .place-type {
-            font-size: 12px;
-            color: var(--text-light);
             margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            color: var(--text);
         }
         
         .place-message {
             font-size: 14px;
             font-family: 'Newsreader', serif;
-            margin-bottom: 8px;
+            color: var(--text-light);
             line-height: 1.4;
+            margin-bottom: 8px;
         }
         
         .place-from {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--primary);
             font-weight: 600;
-        }
-        
-        .directions-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 16px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 12px;
-            width: 100%;
-            transition: all 0.2s;
-        }
-        
-        .directions-btn:hover {
-            background: var(--primary-dark);
         }
         
         /* Modal */
@@ -370,7 +390,7 @@
 
         .form-helper-title {
             font-weight: 700;
-            color: var(--primary);
+            color: var(--text);
         }
         
         .form-input,
@@ -466,7 +486,11 @@
             border-radius: 16px;
             padding: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            min-width: 220px;
+            min-width: 200px;
+        }
+        
+        .mapboxgl-popup-content a:hover {
+            opacity: 0.7;
         }
         
         .mapboxgl-popup-close-button {
@@ -478,7 +502,7 @@
         .popup-title {
             font-weight: 700;
             font-size: 18px;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             color: var(--text);
         }
         
@@ -494,7 +518,7 @@
             font-size: 13px;
             color: var(--primary);
             font-weight: 600;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
         
         /* Loading */
@@ -522,11 +546,6 @@
         
         /* Mobile Optimizations */
         @media (max-width: 768px) {
-            .places-list {
-                max-width: calc(100vw - 40px);
-                max-height: 40vh;
-            }
-            
             .modal {
                 padding: 10px;
             }
@@ -537,7 +556,7 @@
             }
             
             .add-btn {
-                bottom: 20px;
+                bottom: 100px;
                 right: 20px;
                 padding: 14px 20px;
                 font-size: 15px;
@@ -545,6 +564,35 @@
             
             .form-helper {
                 font-size: 12px;
+            }
+            
+            .places-drawer.collapsed {
+                transform: translateY(calc(100% - 60px));
+            }
+        }
+        
+        /* Desktop: Show as sidebar */
+        @media (min-width: 769px) {
+            .places-drawer {
+                left: 20px;
+                right: auto;
+                bottom: 20px;
+                top: 120px;
+                max-width: 320px;
+                border-radius: 16px;
+                max-height: calc(100vh - 120px);
+            }
+            
+            .places-drawer.collapsed {
+                transform: none;
+            }
+            
+            .drawer-handle {
+                display: none;
+            }
+            
+            .add-btn {
+                bottom: 20px;
             }
         }
     </style>
@@ -567,7 +615,16 @@
         </div>
     </div>
     
-    <div class="places-list" id="placesList"></div>
+    <div class="places-drawer" id="placesDrawer">
+        <div class="drawer-handle" id="drawerHandle">
+            <div class="drawer-handle-bar"></div>
+        </div>
+        <div class="drawer-header">
+            <div class="drawer-title">Places</div>
+            <div class="drawer-count" id="placesCount">0 places</div>
+        </div>
+        <div class="places-list" id="placesList"></div>
+    </div>
     
     <button class="add-btn" id="addBtn">
         <span>&plus; Add Place</span>
@@ -589,13 +646,13 @@
                         <span class="form-helper-title">How to get the link:</span><br>
                         1. Search for the place in Google Maps<br>
                         2. Click "Share" button<br>
-                        3. Copy the link and paste here
+                        3. Copy link OR copy the full URL from your browser's address bar
                     </div>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Birthday Message (optional)</label>
-                    <textarea class="form-textarea" id="placeMessage" placeholder="Add a special message or memory..."></textarea>
+                    <textarea class="form-textarea" id="placeMessage" placeholder="Add a special message..."></textarea>
                 </div>
                 
                 <div class="form-group">
