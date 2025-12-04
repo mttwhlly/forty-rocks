@@ -238,10 +238,10 @@ function displayPlaces() {
 // Render places list
 function renderPlacesList() {
     const listContainer = document.getElementById('placesList');
-    const countElement = document.getElementById('placesCount');
+    // const countElement = document.getElementById('placesCount');
     
     listContainer.innerHTML = '';
-    countElement.textContent = `${places.length} ${places.length === 1 ? 'place' : 'places'}`;
+    // countElement.textContent = `( ${places.length} )`;
     
     if (places.length === 0) {
         listContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 40px 20px;">No places yet. Be the first to add one!</div>';
