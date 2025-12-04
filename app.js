@@ -89,7 +89,7 @@ function initMap() {
     
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-left');
     
-    map.on('load', () => {
+    map.on('load', async () => {
         const layers = map.getStyle().layers;
         const labelLayerId = layers.find(
             (layer) => layer.type === 'symbol' && layer.layout['text-field']
@@ -126,6 +126,8 @@ function initMap() {
             }
         }, labelLayerId);
         
+        // Load places after map is ready
+        await loadPlaces();
         displayPlaces();
         renderPlacesList();
     });
@@ -485,8 +487,7 @@ async function handleAddPlace(e) {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', () => {
-    loadPlaces();
-    initMap();
+    initMap(); // Init map first
     
     // Real-time updates
     supabase
