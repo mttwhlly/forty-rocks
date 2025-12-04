@@ -6,6 +6,8 @@ const MAPBOX_TOKEN = 'pk.eyJ1IjoibXR0d2hsbHkiLCJhIjoiY2prZngzcGF1MGRhcTNwbzlhYTl
 const NYC_CENTER = [-73.9712, 40.7831];
 const DEFAULT_ZOOM = 12;
 
+console.log('Token:', MAPBOX_TOKEN.substring(0, 20) + '...');
+
 // Supabase Configuration
 const SUPABASE_URL = 'https://jffzitptaxgpejjakuhk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmZnppdHB0YXhncGVqamFrdWhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3Nzc0NzUsImV4cCI6MjA4MDM1MzQ3NX0.J6w3sHUVFdrlocoJyqcaBEe_69o6gezRbXrKgfL7NDc';
@@ -66,6 +68,10 @@ async function savePlaceToSupabase(place) {
     }
 }
 
+if (!mapboxgl.supported()) {
+    alert('WebGL not supported');
+}
+
 // Initialize map
 function initMap() {
     mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -122,6 +128,7 @@ function initMap() {
         displayPlaces();
         renderPlacesList();
     });
+    map.resize();
 }
 
 // Extract coordinates from Google Maps link or geocode address
@@ -249,7 +256,7 @@ function renderPlacesList() {
         let html = `<div class="place-name">${place.name}</div>`;
         
         if (place.message) {
-            html += `<div class="place-message">"${place.message}"</div>`;
+            html += `<div class="place-message">“${place.message}”</div>`;
         }
         
         if (place.from) {
@@ -445,19 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPlaces();
     initMap();
     
-    // Drawer toggle
-    const drawer = document.getElementById('placesDrawer');
-    const drawerHandle = document.getElementById('drawerHandle');
-    
-    drawerHandle.addEventListener('click', () => {
-        drawer.classList.toggle('collapsed');
-    });
-    
-    // Start collapsed on mobile
-    if (window.innerWidth <= 768) {
-        drawer.classList.add('collapsed');
-    }
-    
+    // Real-time updates
     supabase
         .channel('places-changes')
         .on('postgres_changes', 
@@ -469,16 +464,23 @@ document.addEventListener('DOMContentLoaded', () => {
         )
         .subscribe();
     
-    document.getElementById('locationBtn').addEventListener('click', requestLocation);
-    document.getElementById('addBtn').addEventListener('click', openModal);
-    document.getElementById('cancelBtn').addEventListener('click', closeModal);
-    document.getElementById('addPlaceForm').addEventListener('submit', handleAddPlace);
+    // Event listeners
+    const locationBtn = document.getElementById('locationBtn');
+    const addBtn = document.getElementById('addBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const addPlaceForm = document.getElementById('addPlaceForm');
+    const addModal = document.getElementById('addModal');
     
-    document.getElementById('addModal').addEventListener('click', (e) => {
-        if (e.target.id === 'addModal') {
-            closeModal();
-        }
-    });
+    if (locationBtn) locationBtn.addEventListener('click', requestLocation);
+    if (addBtn) addBtn.addEventListener('click', openModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    if (addPlaceForm) addPlaceForm.addEventListener('submit', handleAddPlace);
+    
+    if (addModal) {
+        addModal.addEventListener('click', (e) => {
+            if (e.target.id === 'addModal') closeModal();
+        });
+    }
 });
 
 window.openDirections = openDirections;

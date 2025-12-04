@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Admin - Approve Places</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -477,11 +480,15 @@
         function showTab(tab) {
             currentTab = tab;
             
-            // Update tab styling
-            document.querySelectorAll('.tab').forEach(t => {
+            // Update tab styling - FIX: use this instead of event.target
+            document.querySelectorAll('.tab').forEach((t, index) => {
                 t.classList.remove('active');
+                if ((tab === 'pending' && index === 0) ||
+                    (tab === 'approved' && index === 1) ||
+                    (tab === 'all' && index === 2)) {
+                    t.classList.add('active');
+                }
             });
-            event.target.classList.add('active');
             
             renderPlaces();
         }

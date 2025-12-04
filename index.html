@@ -314,6 +314,7 @@
             color: var(--text-light);
             line-height: 1.4;
             margin-bottom: 8px;
+            font-style: italic;
         }
         
         .place-from {
@@ -375,11 +376,12 @@
             font-family: 'Zalando Sans Expanded', sans-serif;
             font-size: 22px;
             font-optical-sizing: auto;
-            font-weight: 200;
+            font-weight: 500;
             font-style: normal;
             color: var(--text);
             margin-bottom: 24px;
             letter-spacing: 1px;
+            text-transform: uppercase;
         }
         
         .form-group {
@@ -512,6 +514,7 @@
         }
         
         .popup-title {
+            font-family: 'News Cycle', sans-serif;
             font-weight: 700;
             font-size: 18px;
             margin-bottom: 12px;
@@ -595,7 +598,7 @@
                 left: 20px;
                 right: auto;
                 bottom: 20px;
-                top: 120px;
+                top: 96px;
                 max-width: 320px;
                 border-radius: 16px;
                 max-height: calc(100vh - 120px);
@@ -624,7 +627,7 @@
         <div class="header-content">
             <div>
                 <div class="title"><span class="title-number">40</span>ROCKS</div>
-                <div class="subtitle">It was always you, Laura.</div>
+                <!-- <div class="subtitle">It was always you, Laura.</div> -->
             </div>
             <button class="location-btn" id="locationBtn" title="My Location">
                 <svg fill="#ffffff" width="800px" height="800px" viewBox="0 0 32 32" id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg">
@@ -708,6 +711,14 @@
                     });
             });
         }
+    </script>
+    <script>
+    // Force reload service worker on every page load
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+            registrations.forEach(reg => reg.update());
+        });
+    }
     </script>
     <script src="app.js"></script>
 </body>
