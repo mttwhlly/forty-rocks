@@ -1,15 +1,12 @@
 // Service Worker for NYC Birthday Adventure PWA
-const CACHE_VERSION = 'v18'; // Increment this with each deploy
+const CACHE_VERSION = 'v19'; // Increment this with each deploy
 const CACHE_NAME = `nyc-birthday-${CACHE_VERSION}`;
 
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
     '/app.js',
-    '/manifest.json',
-    'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css',
-    'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js',
-    'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;700&display=swap'
+    '/manifest.json'
 ];
 
 // Install event - cache assets
@@ -21,6 +18,7 @@ self.addEventListener('install', (event) => {
                 return cache.addAll(ASSETS_TO_CACHE);
             })
             .then(() => self.skipWaiting())
+            .catch(err => console.error('Cache failed:', err))
     );
 });
 
@@ -42,41 +40,33 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
-    // Skip chrome extension requests
-    if (event.request.url.startsWith('chrome-extension://')) {
+    // Skip non-http requests
+    if (!event.request.url.startsWith('http')) {
         return;
     }
 
-        // Network-first for HTML
+    // Network-first for HTML
     if (event.request.destination === 'document') {
         event.respondWith(
             fetch(event.request)
                 .then(response => {
-                    const responseClone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+                    if (response && response.status === 200) {
+                        const responseClone = response.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+                    }
                     return response;
                 })
-                .catch(() => caches.match(event.request))
+                .catch(() => caches.match(event.request).then(r => r || fetch(event.request)))
         );
         return;
     }
     
-    // Network-first strategy for Mapbox API calls
-    if (event.request.url.includes('api.mapbox.com')) {
-        event.respondWith(
-            fetch(event.request)
-                .then(response => {
-                    // Clone the response before caching
-                    const responseClone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => {
-                        cache.put(event.request, responseClone);
-                    });
-                    return response;
-                })
-                .catch(() => {
-                    return caches.match(event.request);
-                })
-        );
+    // Network-only for API calls (Mapbox, Supabase)
+    if (event.request.url.includes('api.mapbox.com') || 
+        event.request.url.includes('supabase.co') ||
+        event.request.url.includes('supabase.com') ||
+        event.request.url.includes('cdn.jsdelivr.net')) {
+        event.respondWith(fetch(event.request));
         return;
     }
     
@@ -89,14 +79,11 @@ self.addEventListener('fetch', (event) => {
                 }
                 
                 return fetch(event.request).then((response) => {
-                    // Don't cache non-successful responses
                     if (!response || response.status !== 200 || response.type === 'error') {
                         return response;
                     }
                     
-                    // Clone the response
                     const responseClone = response.clone();
-                    
                     caches.open(CACHE_NAME).then((cache) => {
                         cache.put(event.request, responseClone);
                     });
@@ -104,35 +91,6 @@ self.addEventListener('fetch', (event) => {
                     return response;
                 });
             })
-            .catch(() => {
-                // Return a custom offline page if available
-                if (event.request.destination === 'document') {
-                    return caches.match('/index.html');
-                }
-            })
-    );
-});
-
-// Background sync for when offline
-self.addEventListener('sync', (event) => {
-    if (event.tag === 'sync-places') {
-        event.waitUntil(
-            // Sync logic here - can be expanded for backend integration
-            console.log('Background sync triggered')
-        );
-    }
-});
-
-// Push notifications (for future enhancements)
-self.addEventListener('push', (event) => {
-    const options = {
-        body: event.data ? event.data.text() : 'New birthday message!',
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
-        vibrate: [200, 100, 200]
-    };
-    
-    event.waitUntil(
-        self.registration.showNotification('NYC Birthday Adventure', options)
+            .catch(() => fetch(event.request))
     );
 });
