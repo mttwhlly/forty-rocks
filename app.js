@@ -216,6 +216,15 @@ function createPopupContent(place) {
     return html;
 }
 
+// Close all popups
+function closeAllPopups() {
+    markers.forEach(m => {
+        if (m.getPopup().isOpen()) {
+            m.getPopup().remove();
+        }
+    });
+}
+
 // Display all places on map
 function displayPlaces() {
     markers.forEach(marker => marker.remove());
@@ -224,13 +233,22 @@ function displayPlaces() {
     places.forEach(place => {
         const el = createMarker(place);
         
+        const popup = new mapboxgl.Popup({ offset: 25 })
+            .setHTML(createPopupContent(place));
+        
         const marker = new mapboxgl.Marker(el)
             .setLngLat([place.lng, place.lat])
-            .setPopup(
-                new mapboxgl.Popup({ offset: 25 })
-                    .setHTML(createPopupContent(place))
-            )
+            .setPopup(popup)
             .addTo(map);
+        
+        // Close all other popups when this one opens
+        popup.on('open', () => {
+            markers.forEach(m => {
+                if (m !== marker && m.getPopup().isOpen()) {
+                    m.getPopup().remove();
+                }
+            });
+        });
         
         markers.push(marker);
     });
@@ -271,6 +289,9 @@ function renderPlacesList() {
 
 // Fly to place on map
 function flyToPlace(place) {
+    // Close all popups first
+    closeAllPopups();
+    
     // Collapse drawer on mobile after selection
     const drawer = document.getElementById('placesDrawer');
     if (window.innerWidth <= 768) {
