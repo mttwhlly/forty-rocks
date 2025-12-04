@@ -1,5 +1,5 @@
 // Service Worker for NYC Birthday Adventure PWA
-const CACHE_VERSION = 'v21'; // Increment this with each deploy
+const CACHE_VERSION = 'v22'; // Increment this with each deploy
 const CACHE_NAME = `nyc-birthday-${CACHE_VERSION}`;
 
 const ASSETS_TO_CACHE = [
