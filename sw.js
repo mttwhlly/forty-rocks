@@ -1,5 +1,7 @@
 // Service Worker for NYC Birthday Adventure PWA
-const CACHE_NAME = 'nyc-birthday-v16';
+const CACHE_VERSION = 'v18'; // Increment this with each deploy
+const CACHE_NAME = `nyc-birthday-${CACHE_VERSION}`;
+
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -28,7 +30,7 @@ self.addEventListener('activate', (event) => {
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
+                    if (cacheName.startsWith('nyc-birthday-') && cacheName !== CACHE_NAME) {
                         console.log('Deleting old cache:', cacheName);
                         return caches.delete(cacheName);
                     }
@@ -42,6 +44,20 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     // Skip chrome extension requests
     if (event.request.url.startsWith('chrome-extension://')) {
+        return;
+    }
+
+        // Network-first for HTML
+    if (event.request.destination === 'document') {
+        event.respondWith(
+            fetch(event.request)
+                .then(response => {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+                    return response;
+                })
+                .catch(() => caches.match(event.request))
+        );
         return;
     }
     
