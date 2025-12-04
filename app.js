@@ -208,7 +208,7 @@ function createPopupContent(place) {
     // Add directions link with icon
     html += `<a href="${place.link}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-weight: 600; text-decoration: none; margin-top: 6px; font-size: 12px; background: var(--shadow); padding: 2px 10px; border-radius: 4px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+            <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 013.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
         </svg>
         Directions
     </a>`;
@@ -304,7 +304,7 @@ function openDirections(link) {
     window.open(link, '_blank');
 }
 
-// Geolocation functions
+// Geolocation functions - FIXED
 function requestLocation() {
     if (!navigator.geolocation) {
         alert('Geolocation is not supported by your browser');
@@ -312,19 +312,30 @@ function requestLocation() {
     }
     
     const locationBtn = document.getElementById('locationBtn');
+    
+    // Toggle location tracking
+    if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+        locationBtn.classList.remove('active');
+        if (userLocationMarker) {
+            userLocationMarker.remove();
+            userLocationMarker = null;
+        }
+        return;
+    }
+    
     locationBtn.classList.add('active');
     
     navigator.geolocation.getCurrentPosition(
         position => {
-            updateUserLocation(position.coords);
+            updateUserLocation(position.coords, true); // Fly only on first click
             
-            if (watchId === null) {
-                watchId = navigator.geolocation.watchPosition(
-                    pos => updateUserLocation(pos.coords),
-                    error => console.error('Location watch error:', error),
-                    { enableHighAccuracy: true, maximumAge: 10000 }
-                );
-            }
+            watchId = navigator.geolocation.watchPosition(
+                pos => updateUserLocation(pos.coords, false), // Don't fly on updates
+                error => console.error('Location watch error:', error),
+                { enableHighAccuracy: true, maximumAge: 10000 }
+            );
         },
         error => {
             console.error('Geolocation error:', error);
@@ -335,30 +346,33 @@ function requestLocation() {
     );
 }
 
-function updateUserLocation(coords) {
+function updateUserLocation(coords, shouldFly = false) {
     const { latitude, longitude } = coords;
     
     if (userLocationMarker) {
-        userLocationMarker.remove();
+        userLocationMarker.setLngLat([longitude, latitude]);
+    } else {
+        const el = document.createElement('div');
+        el.style.width = '20px';
+        el.style.height = '20px';
+        el.style.borderRadius = '50%';
+        el.style.background = '#4A90E2';
+        el.style.border = '4px solid white';
+        el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+        
+        userLocationMarker = new mapboxgl.Marker(el)
+            .setLngLat([longitude, latitude])
+            .addTo(map);
     }
     
-    const el = document.createElement('div');
-    el.style.width = '20px';
-    el.style.height = '20px';
-    el.style.borderRadius = '50%';
-    el.style.background = '#4A90E2';
-    el.style.border = '4px solid white';
-    el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-    
-    userLocationMarker = new mapboxgl.Marker(el)
-        .setLngLat([longitude, latitude])
-        .addTo(map);
-    
-    map.flyTo({
-        center: [longitude, latitude],
-        zoom: 15,
-        duration: 2000
-    });
+    // Only fly to location on first click
+    if (shouldFly) {
+        map.flyTo({
+            center: [longitude, latitude],
+            zoom: 15,
+            duration: 2000
+        });
+    }
 }
 
 // Modal functions
