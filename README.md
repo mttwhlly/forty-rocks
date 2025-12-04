@@ -1,6 +1,4 @@
-# Quick Start Guide 🚀
-
-Get your NYC Birthday Adventure Map running in 5 minutes!
+# 40 ROCKS
 
 ## Step 1: Get Mapbox Token (2 minutes)
 
@@ -78,48 +76,4 @@ See `DEPLOYMENT.md` for detailed instructions, or:
 3. Point to your repo
 4. Deploy!
 
-## Done! 🎉
-
-Your map is now ready for the birthday celebration!
-
-### Share with Friends & Family
-
-Send them this message:
-
-```
-🎂 Help celebrate a special 40th birthday in NYC!
-
-Add your birthday wishes to our adventure map:
-[YOUR_URL_HERE]
-
-1. Click "✨ Add Place"
-2. Choose "Birthday Message"
-3. Pick a meaningful NYC location
-4. Write your message
-5. Add your name
-
-Can't wait to see your contribution! 🗽✨
-```
-
-## Need Help?
-
-- **Full Documentation:** See `README.md`
-- **Deployment Guide:** See `DEPLOYMENT.md`
-- **Map not loading?** Check that your Mapbox token is correct
-- **Location not working?** Make sure you're using HTTPS (or localhost)
-
-## Quick Tips
-
-✨ **Performance:** The app is already optimized for NYC with hardware-accelerated maps
-
-📱 **Mobile:** Works great on phones - add to home screen for app-like experience
-
-🗺️ **Offline:** Service worker caches everything for offline use
-
-💾 **Data:** All places saved in browser (LocalStorage)
-
-🎂 **Messages:** Friends can add birthday messages from anywhere!
-
----
-
-Have the best 40th birthday celebration ever! 🎉🗽
+## Done! 

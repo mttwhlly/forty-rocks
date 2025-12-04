@@ -256,7 +256,7 @@ function renderPlacesList() {
         let html = `<div class="place-name">${place.name}</div>`;
         
         if (place.message) {
-            html += `<div class="place-message">“${place.message}”</div>`;
+            html += `<div class="place-message">"${place.message}"</div>`;
         }
         
         if (place.from) {
@@ -464,6 +464,16 @@ document.addEventListener('DOMContentLoaded', () => {
         )
         .subscribe();
     
+    // Drawer toggle for mobile
+    const drawerHandle = document.getElementById('drawerHandle');
+    const drawer = document.getElementById('placesDrawer');
+    
+    if (drawerHandle) {
+        drawerHandle.addEventListener('click', () => {
+            drawer.classList.toggle('collapsed');
+        });
+    }
+    
     // Event listeners
     const locationBtn = document.getElementById('locationBtn');
     const addBtn = document.getElementById('addBtn');
@@ -476,9 +486,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
     if (addPlaceForm) addPlaceForm.addEventListener('submit', handleAddPlace);
     
+    // Close modal when clicking outside
     if (addModal) {
         addModal.addEventListener('click', (e) => {
-            if (e.target.id === 'addModal') closeModal();
+            // Only close if clicking directly on the modal backdrop (not on children)
+            if (e.target.classList.contains('modal')) {
+                closeModal();
+            }
         });
     }
 });
