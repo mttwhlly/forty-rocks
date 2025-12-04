@@ -81,9 +81,10 @@ function initMap() {
         style: 'mapbox://styles/mapbox/streets-v12',
         center: NYC_CENTER,
         zoom: DEFAULT_ZOOM,
-        pitch: 45,
+        pitch: 0,  // Remove 3D
         bearing: 0,
-        antialias: true
+        antialias: false,  // Better iOS performance
+        failIfMajorPerformanceCaveat: false
     });
     
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-left');

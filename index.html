@@ -13,8 +13,9 @@
     <meta name="apple-mobile-web-app-title" content="NYC Birthday">
     
     <!-- Mapbox GL JS -->
-    <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
-    <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+<!-- Change these lines -->
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 
     <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -728,10 +729,10 @@
         }
     </script>
     <script>
-    // Force reload service worker on every page load
+    // Unregister all service workers
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(registrations => {
-            registrations.forEach(reg => reg.update());
+            registrations.forEach(reg => reg.unregister());
         });
     }
     </script>
